@@ -34,7 +34,6 @@
 
     <h1>🧠 Trivial Pursuit Digitalization Edition</h1>
 
-    <!-- CONFIGURACIÓN INICIAL -->
     <div id="setup" class="setup">
         <h3>Configuración de Partida</h3>
         <label for="numEquipos">Número de Equipos (2-4): </label>
@@ -43,23 +42,16 @@
         <button onclick="iniciarJuego()">Comenzar Partida</button>
     </div>
 
-    <!-- CONTENEDOR DEL JUEGO -->
     <div id="gameContainer" class="game-container hidden">
         <div id="turnoAlerta">Es el turno del <strong>Equipo 1</strong></div>
-        
         <div>
             <button id="btnDado" onclick="lanzarDado()">🎲 Lanzar Dado</button>
             <div id="dadoResult" class="dado-resultado">?</div>
         </div>
-
-        <!-- TABLERO LINEAL SIMPLIFICADO CIRCULAR (12 casillas) -->
         <div class="tablero-digital" id="tablero"></div>
-
-        <!-- PANELES DE EQUIPOS -->
         <div class="panel-equipos" id="panelEquipos"></div>
     </div>
 
-    <!-- VENTANA EMERGENTE DE PREGUNTAS (MODAL) -->
     <div id="overlay" class="overlay hidden"></div>
     <div id="modalPregunta" class="modal hidden">
         <h3 id="modalCategoria" style="margin-top:0;"></h3>
@@ -67,11 +59,30 @@
         <div id="modalOpciones"></div>
     </div>
 
-    <!-- ENLACE AL BANCO DE PREGUNTAS -->
-    <script src="preguntas.js"></script>
-
     <script>
-        // Configuración de Casillas del Tablero (Categorías y si dan Quesito definitivo)
+        // BANCO DE PREGUNTAS INTEGRADO DIRECTAMENTE
+        const BANCO_PREGUNTAS = {
+            "Geografía": [
+                { q: "¿Cuál es el río más largo del mundo?", a: ["Amazonas", "Nilo", "Misisipi", "Danubio"], correcta: 0 },
+                { q: "¿En qué país se encuentra la Torre Eiffel?", a: ["Italia", "Francia", "España", "Alemania"], correcta: 1 }
+            ],
+            "Arte y Literatura": [
+                { q: "¿Quién pintó la Mona Lisa?", a: ["Van Gogh", "Da Vinci", "Picasso", "Velázquez"], correcta: 1 }
+            ],
+            "Historia": [
+                { q: "¿En qué año llegó Cristóbal Colón a América?", a: ["1492", "1588", "1789", "1350"], correcta: 0 }
+            ],
+            "Entretenimiento": [
+                { q: "¿Qué personaje vive en una piña debajo del mar?", a: ["Bob Esponja", "Patricio", "Calamardo", "Arenita"], correcta: 0 }
+            ],
+            "Ciencia y Naturaleza": [
+                { q: "¿Cuál es el símbolo químico del agua?", a: ["CO2", "H2O", "O2", "H2"], correcta: 1 }
+            ],
+            "Deportes": [
+                { q: "¿Cuántos jugadores tiene un equipo de fútbol en el campo?", a: ["11", "7", "9", "12"], correcta: 0 }
+            ]
+        };
+
         const CASILLAS = [
             { cat: "Geografía", color: "var(--geo)", quesito: true },
             { cat: "Entretenimiento", color: "var(--ent)", quesito: false },
@@ -95,6 +106,7 @@
             if(num < 2 || num > 4) return alert("Elige entre 2 y 4 equipos.");
             
             estadoJuego.numEquipos = num;
+            estadoJuego.equipos = [];
             for(let i=0; i<num; i++) {
                 estadoJuego.equipos.push({
                     nombre: `Equipo ${i+1}`,
@@ -164,7 +176,6 @@
             document.getElementById('dadoResult').innerText = dado;
 
             let eq = estadoJuego.equipos[estadoJuego.turnoActual];
-            // Movimiento circular
             eq.casillaActual = (eq.casillaActual + dado) % CASILLAS.length;
 
             setTimeout(() => {
@@ -174,19 +185,3 @@
         }
 
         function aparecerPregunta(casilla) {
-            const listaPreguntas = window.BANCO_PREGUNTAS[casilla.cat];
-            if (!listaPreguntas || listaPreguntas.length === 0) {
-                alert(`No hay preguntas cargadas en ${casilla.cat}. Se pasa el turno.`);
-                siguienteTurno();
-                return;
-            }
-
-            const trivia = listaPreguntas[Math.floor(Math.random() * listaPreguntas.length)];
-            
-            document.getElementById('modalCategoria').innerText = `${casilla.cat.toUpperCase()} ${casilla.quesito ? '(¡CASILLA DE QUESITO! 🏆)' : ''}`;
-            document.getElementById('modalTextoPregunta').innerText = trivia.q;
-            
-            const divOpciones = document.getElementById('modalOpciones');
-            divOpciones.innerHTML = '';
-            
-            trivia.a.forEach((opcion, idx) => {
