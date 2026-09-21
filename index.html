@@ -60,7 +60,6 @@
     </div>
 
     <script>
-        // BANCO DE PREGUNTAS INTEGRADO DIRECTAMENTE
         const BANCO_PREGUNTAS = {
             "Geografía": [
                 { q: "¿Cuál es el río más largo del mundo?", a: ["Amazonas", "Nilo", "Misisipi", "Danubio"], correcta: 0 },
@@ -106,7 +105,8 @@
             if(num < 2 || num > 4) return alert("Elige entre 2 y 4 equipos.");
             
             estadoJuego.numEquipos = num;
-            estadoJuego.equipos = [];
+            estadoJuego.equipos = []; // Corrección de reinicio limpio
+            
             for(let i=0; i<num; i++) {
                 estadoJuego.equipos.push({
                     nombre: `Equipo ${i+1}`,
