@@ -2,107 +2,179 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Trivial Pursuit - Digitalización</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trivial Pursuit Máster - Digitalización</title>
     <style>
-        body { font-family: sans-serif; background: #2c3e50; color: #fff; text-align: center; padding: 20px; }
-        .box { background: #34495e; padding: 20px; border-radius: 10px; max-width: 600px; margin: 20px auto; }
+        :root {
+            --geo: #1e90ff; --hist: #ffd700; --cien: #32cd32;
+            --arte: #ba55d3; --dep: #ff4500; --ocio: #ff69b4;
+        }
+        body { font-family: 'Segoe UI', sans-serif; background: #2c3e50; color: #fff; text-align: center; margin: 0; padding: 20px; }
+        .box { background: #34495e; padding: 20px; border-radius: 12px; max-width: 750px; margin: 20px auto; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
         .hidden { display: none !important; }
-        .tablero { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 20px 0; }
-        .casilla { padding: 15px; border-radius: 5px; font-weight: bold; color: #000; text-align: center; }
-        .btn { background: #e67e22; color: #fff; border: none; padding: 10px 20px; font-size: 16px; border-radius: 5px; cursor: pointer; }
-        .opcion { display: block; width: 100%; margin: 5px 0; padding: 10px; background: #eee; border: none; cursor: pointer; }
+        
+        /* TABLERO EN CUADRÍCULA 4x4 (Circuito perimetral de 12 casillas) */
+        .tablero-grid { display: grid; grid-template-columns: repeat(4, 1fr); grid-template-rows: repeat(4, 1fr); gap: 12px; width: 380px; height: 380px; margin: 20px auto; position: relative; }
+        .casilla { border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 8px; font-size: 11px; font-weight: bold; color: #000; box-shadow: 0 3px 6px rgba(0,0,0,0.2); position: relative; border: 3px solid transparent; transition: 0.3s; }
+        
+        /* Posiciones en el perímetro */
+        .c0 { grid-column: 1; grid-row: 1; } .c1 { grid-column: 2; grid-row: 1; } .c2 { grid-column: 3; grid-row: 1; } .c3 { grid-column: 4; grid-row: 1; }
+        .c4 { grid-column: 4; grid-row: 2; } .c5 { grid-column: 4; grid-row: 3; } .c6 { grid-column: 4; grid-row: 4; } .c7 { grid-column: 3; grid-row: 4; }
+        .c8 { grid-column: 2; grid-row: 4; } .c9 { grid-column: 1; grid-row: 4; } .c10 { grid-column: 1; grid-row: 3; } .c11 { grid-column: 1; grid-row: 2; }
+        
+        /* Efecto destello para casillas donde puedes moverte */
+        .casilla.elegible { border-color: #fff; box-shadow: 0 0 18px #fff; cursor: pointer; animation: pulso 0.8s infinite alternate; }
+        @keyframes pulso { from { transform: scale(1); } to { transform: scale(1.04); } }
+
+        /* CASILLAS DE QUESITO ESPECIALES */
+        .casilla.esquina { border: 2px dashed #000; }
+        .icono-quesito-casilla { font-size: 14px; margin-top: 2px; }
+
+        /* MUÑECOS / FICHAS DE LOS EQUIPOS */
+        .contenedor-fichas { display: flex; gap: 4px; justify-content: center; width: 100%; min-height: 22px; flex-wrap: wrap; }
+        .muneco { width: 18px; height: 18px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 2px 4px rgba(0,0,0,0.4); display: inline-block; }
+        
+        /* ANIMACIÓN DEL DADO */
+        .dado-wrapper { margin: 15px 0; }
+        .dado-cubo { font-size: 58px; display: inline-block; transition: transform 0.5s ease; cursor: pointer; user-select: none; }
+        .dado-rodando { animation: rodar 0.4s infinite linear; }
+        @keyframes rodar { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+        /* BOTONES Y OPCIONES */
+        .btn { background: #e67e22; color: #fff; border: none; padding: 12px 26px; font-size: 16px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .btn:hover { background: #d35400; }
+        .btn:disabled { background: #7f8c8d; cursor: not-allowed; }
+        .opcion { display: block; width: 100%; margin: 8px 0; padding: 12px; background: #eee; border: none; border-radius: 6px; cursor: pointer; font-size: 15px; text-align: left; font-weight: 500; }
+        .opcion:hover { background: #ddd; }
+        
+        /* PANELES DE MARCADOR */
+        .marcador { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-top: 20px; }
+        .tarjeta-marcador { background: #2c3e50; padding: 10px; border-radius: 8px; border-top: 5px solid #fff; box-shadow: 0 3px 6px rgba(0,0,0,0.1); }
+        .tarjeta-marcador.activo { background: #16a085; box-shadow: 0 0 10px #16a085; }
+        .contenedor-quesitos-marcador { display: flex; gap: 4px; justify-content: center; margin-top: 8px; }
+        .quesito-slot { width: 14px; height: 14px; display: inline-block; border-radius: 50%; opacity: 0.15; border: 1px solid #fff; }
+        .quesito-slot.ganado { opacity: 1; box-shadow: 0 0 5px #fff; }
     </style>
 </head>
 <body>
 
-    <h1>🧠 Trivial Pursuit Digitalización</h1>
+    <h1>🧠 Trivial Pursuit - IA & Digitalización</h1>
 
-    <!-- PANTALLA INICIAL -->
+    <!-- PANTALLA CONFIGURACIÓN -->
     <div id="pantalla-inicio" class="box">
-        <h3>Configuración de Partida</h3>
-        <p>Elige el número de equipos para empezar el juego:</p>
-        <button class="btn" onclick="comenzarPartida()">🚀 Comenzar Partida</button>
+        <h3>Configuración de la Partida</h3>
+        <label style="font-size: 16px;">¿Cuántos equipos jugarán hoy? </label>
+        <select id="select-equipos" style="padding: 8px; font-size: 16px; border-radius: 4px; margin-left: 10px;">
+            <option value="2">2 Equipos</option>
+            <option value="3">3 Equipos</option>
+            <option value="4">4 Equipos</option>
+        </select>
+        <br><br>
+        <button class="btn" onclick="comenzarPartida()">🚀 Iniciar Tablero</button>
     </div>
 
-    <!-- PANTALLA DE JUEGO -->
+    <!-- PANTALLA PRINCIPAL DEL JUEGO -->
     <div id="pantalla-juego" class="box hidden">
-        <h2 id="turno">Turno: Equipo 1</h2>
-        <button class="btn" onclick="tirarDado()">🎲 Tirar Dado</button>
-        <h3 id="resultado-dado" style="font-size: 32px; margin: 10px 0;">?</h3>
+        <h2 id="turno-alerta" style="margin-top: 0;">Turno: <span id="nombre-equipo-activo">Equipo 1</span></h2>
         
-        <div class="tablero">
-            <div class="casilla" style="background:#1e90ff;">Geografía</div>
-            <div class="casilla" style="background:#ffd700;">Historia</div>
-            <div class="casilla" style="background:#32cd32;">Ciencia</div>
-            <div class="casilla" style="background:#ff69b4;">Arte</div>
-            <div class="casilla" style="background:#ff4500;">Deportes</div>
-            <div class="casilla" style="background:#ba55d3;">Ocio</div>
+        <div class="dado-wrapper">
+            <button class="btn" id="btn-dado" onclick="tirarDado()">🎲 Tirar Dado</button>
+            <div id="dado-visual" class="dado-cubo" onclick="tirarDado()">🎲</div>
+            <p id="instrucciones-movimiento" style="color: #f1c40f; font-weight: bold; height: 18px; margin: 8px 0; font-size: 16px;"></p>
         </div>
+
+        <!-- TABLERO VISUAL -->
+        <div class="tablero-grid" id="tablero"></div>
+
+        <!-- MARCADOR DE EQUIPOS Y QUESITOS -->
+        <div id="marcador-equipos" class="marcador"></div>
     </div>
 
-    <!-- PREGUNTA -->
+    <!-- PANTALLA DE PREGUNTAS -->
     <div id="pantalla-pregunta" class="box hidden" style="background:#fff; color:#000;">
-        <h3 id="preg-categoria"></h3>
-        <p id="preg-texto" style="font-size:18px; font-weight:bold;"></p>
+        <h2 id="preg-categoria" style="margin: 0 0 15px 0; padding: 8px; border-radius: 4px; font-size: 18px;"></h2>
+        <p id="preg-texto" style="font-size:20px; font-weight:bold; margin-bottom: 25px;"></p>
         <div id="preg-opciones"></div>
     </div>
 
     <script>
+        // ==========================================
+        // BANCO DE PREGUNTAS (Aquí meteremos tus preguntas cuando me las pases)
+        // ==========================================
         const PREGUNTAS = {
-            "Geografía": { q: "¿Cuál es el río más largo del mundo?", a: ["Amazonas", "Nilo", "Danubio"], c: 0 },
-            "Historia": { q: "¿En qué año se descubrió América?", a: ["1492", "1789", "1914"], c: 0 },
-            "Ciencia": { q: "¿Cuál es el componente químico del agua?", a: ["H2O", "CO2", "O2"], c: 0 },
-            "Arte": { q: "¿Quién pintó la Mona Lisa?", a: ["Da Vinci", "Picasso", "Velázquez"], c: 0 },
-            "Deportes": { q: "¿Cuántos jugadores tiene un equipo de fútbol?", a: ["11", "7", "5"], c: 0 },
-            "Ocio": { q: "¿Qué personaje vive en una piña bajo el mar?", a: ["Bob Esponja", "Patricio", "Calamardo"], c: 0 }
+            "Geografía": [
+                { q: "¿Cuál es el río más largo del mundo?", a: ["Amazonas", "Nilo", "Danubio"], c: 0 },
+                { q: "¿En qué país está la Torre Eiffel?", a: ["España", "Francia", "Italia"], c: 1 }
+            ],
+            "Historia": [
+                { q: "¿En qué año se descubrió América?", a: ["1492", "1789", "1914"], c: 0 }
+            ],
+            "Ciencia": [
+                { q: "¿Cuál es el componente químico del agua?", a: ["H2O", "CO2", "O2"], c: 0 }
+            ],
+            "Arte": [
+                { q: "¿Quién pintó la Mona Lisa?", a: ["Da Vinci", "Picasso", "Velázquez"], c: 0 }
+            ],
+            "Deportes": [
+                { q: "¿Cuántos jugadores tiene un equipo de fútbol en el campo?", a: ["11", "7", "5"], c: 0 }
+            ],
+            "Ocio": [
+                { q: "¿Qué personaje vive en una piña debajo del mar?", a: ["Bob Esponja", "Patricio", "Calamardo"], c: 0 }
+            ]
         };
 
-        const CATEGORIAS = ["Geografía", "Historia", "Ciencia", "Arte", "Deportes", "Ocio"];
-        let turno = 1;
+        // Estructura perimetral del circuito (Las esquinas 0, 3, 6, 9 son casillas de Quesito 🏆)
+        const CASILLAS = [
+            { cat: "Geografía", color: "var(--geo)", quesito: true },
+            { cat: "Historia", color: "var(--hist)", quesito: false },
+            { cat: "Ciencia", color: "var(--cien)", quesito: false },
+            { cat: "Arte", color: "var(--arte)", quesito: true },
+            { cat: "Deportes", color: "var(--dep)", quesito: false },
+            { cat: "Ocio", color: "var(--ocio)", quesito: false },
+            { cat: "Geografía", color: "var(--geo)", quesito: true },
+            { cat: "Historia", color: "var(--hist)", quesito: false },
+            { cat: "Ciencia", color: "var(--cien)", quesito: false },
+            { cat: "Arte", color: "var(--arte)", quesito: true },
+            { cat: "Deportes", color: "var(--dep)", quesito: false },
+            { cat: "Ocio", color: "var(--ocio)", quesito: false }
+        ];
+
+        const CATEGORIAS_UNICAS = ["Geografía", "Historia", "Ciencia", "Arte", "Deportes", "Ocio"];
+        const COLORES_EQUIPOS = ["#e74c3c", "#3498db", "#2ecc71", "#f1c40f"];
+        
+        let totalEquipos = 2;
+        let turnoActual = 0;
+        let posiciones = [];
+        let inventarioQuesitos = [];
+        let dadoResultado = 0;
 
         function comenzarPartida() {
+            totalEquipos = parseInt(document.getElementById('select-equipos').value);
+            posiciones = Array(totalEquipos).fill(0);
+            
+            inventarioQuesitos = [];
+            for (let i = 0; i < totalEquipos; i++) {
+                let obj = {};
+                CATEGORIAS_UNICAS.forEach(c => obj[c] = false);
+                inventarioQuesitos.push(obj);
+            }
+            
             document.getElementById('pantalla-inicio').classList.add('hidden');
             document.getElementById('pantalla-juego').classList.remove('hidden');
-        }
-
-        function tirarDado() {
-            let dado = Math.floor(Math.random() * 6) + 1;
-            document.getElementById('resultado-dado').innerText = dado;
             
-            setTimeout(() => {
-                let catAleatoria = CATEGORIAS[dado - 1];
-                mostrarPregunta(catAleatoria);
-            }, 800);
+            dibujarTablero();
+            actualizarMarcador();
+            actualizarTurnoInterfaz();
         }
 
-        function mostrarPregunta(categoria) {
-            let datos = PREGUNTAS[categoria];
-            document.getElementById('pantalla-juego').classList.add('hidden');
-            document.getElementById('pantalla-pregunta').classList.remove('hidden');
-            
-            document.getElementById('preg-categoria').innerText = categoria.toUpperCase();
-            document.getElementById('preg-texto').innerText = datos.q;
-            
-            let htmlOpciones = "";
-            datos.a.forEach((opc, idx) => {
-                htmlOpciones += `<button class="opcion" onclick="responder(${idx}, ${datos.c})">${opc}</button>`;
-            });
-            document.getElementById('preg-opciones').innerHTML = htmlOpciones;
-        }
+        function dibujarTablero() {
+            const tableroHTML = document.getElementById('tablero');
+            tableroHTML.innerHTML = "";
 
-        function responder(elegido, correcto) {
-            if (elegido === correcto) {
-                alert("¡Correcto! 🎉 Sigue jugando.");
-            } else {
-                alert("Incorrecto... 😢 Cambio de turno.");
-                turno = turno === 1 ? 2 : 1;
-                document.getElementById('turno').innerText = "Turno: Equipo " + turno;
-            }
-            document.getElementById('pantalla-pregunta').classList.add('hidden');
-            document.getElementById('pantalla-juego').classList.remove('hidden');
-            document.getElementById('resultado-dado').innerText = "?";
-        }
-    </script>
-</body>
-</html>
+            CASILLAS.forEach((casilla, idx) => {
+                let div = document.createElement('div');
+                div.className = `casilla c${idx} ${casilla.quesito ? 'esquina' : ''}`;
+                div.style.backgroundColor = casilla.color;
+                div.innerHTML = `<span>${casilla.cat}</span>${casilla.quesito ? '<span class="icono-quesito-casilla">🏆 Quesito</span>' : ''}`;
 
+                let contenedorFichas = document.createElement('div');
